@@ -1,7 +1,7 @@
 {
   "name": "grizzly-sms-desktop",
   "version": "0.3.2",
-  "description": "A secure Windows desktop client for Grizzly SMS",
+  "description": "A secure desktop client for Grizzly SMS",
   "main": "electron/main.cjs",
   "type": "module",
   "author": "Grizzly SMS Desktop Contributors",
@@ -13,7 +13,9 @@
     "preview": "vite preview",
     "start": "electron .",
     "dist": "npm run build && electron-builder --win nsis",
-    "dist:portable": "npm run build && electron-builder --win portable"
+    "dist:portable": "npm run build && electron-builder --win portable",
+    "dist:mac:x64": "npm run build && electron-builder --mac dmg --x64",
+    "dist:mac:arm64": "npm run build && electron-builder --mac dmg --arm64"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -52,6 +54,14 @@
         "nsis"
       ],
       "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "Grizzly.SMS.Desktop-${version}-mac-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

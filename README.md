@@ -1,14 +1,26 @@
 # Grizzly SMS Desktop
 
-面向 Windows 的 Grizzly SMS 桌面客户端，用于查询余额、搜索服务和国家、租用号码、接收验证码、管理激活状态，以及保存本地历史归档。
+面向 Windows 与 macOS 的 Grizzly SMS 桌面客户端，用于查询余额、搜索服务和国家、租用号码、接收验证码、管理激活状态，以及保存本地历史归档。
 
-项目基于 Electron、React 和 TypeScript 构建，API Key 只在 Electron 主进程中使用，并通过 Windows 安全存储加密保存。
+项目基于 Electron、React 和 TypeScript 构建，API Key 只在 Electron 主进程中使用，并通过操作系统安全存储加密保存。
 
 > 当前版本：`0.3.2`
 >
-> 平台：Windows x64
+> 平台：Windows x64、macOS Intel、macOS Apple Silicon
 >
 > API：[Grizzly SMS Client API](https://api.grizzlysms.com/docs/client)
+
+## 下载
+
+前往 [v0.3.2 Release](https://github.com/Newchana/grizzly-sms-desktop/releases/tag/v0.3.2) 下载对应平台文件：
+
+| 平台 | 处理器 | 文件 |
+| --- | --- | --- |
+| Windows | x64 | `Grizzly.SMS.Desktop-0.3.2-Setup.exe` |
+| macOS | Intel | `Grizzly.SMS.Desktop-0.3.2-mac-x64.dmg` |
+| macOS | Apple Silicon | `Grizzly.SMS.Desktop-0.3.2-mac-arm64.dmg` |
+
+每个安装包同时提供 `.sha256` 校验文件。macOS 两个版本不能混用；不确定时点击苹果菜单中的“关于本机”查看芯片类型。
 
 ## 主要功能
 
@@ -76,7 +88,9 @@ flowchart LR
 
 ## 环境要求
 
-- Windows 10 或 Windows 11
+- Windows 10 / 11（x64），或 macOS 13 及以上
+- Intel Mac 下载文件名带 `mac-x64` 的版本
+- Apple Silicon Mac（M1 / M2 / M3 / M4 等）下载文件名带 `mac-arm64` 的版本
 - Node.js 20.19 或更高版本
 - npm
 - 有效的 Grizzly SMS 账户和 API Key
@@ -101,6 +115,8 @@ npm run dev
 | `npm test` | 运行 Node.js 自动化测试 |
 | `npm run dist` | 生成 Windows NSIS 安装包 |
 | `npm run dist:portable` | 生成 Windows 便携版 |
+| `npm run dist:mac:x64` | 在 macOS 上生成 Intel DMG |
+| `npm run dist:mac:arm64` | 在 macOS 上生成 Apple Silicon DMG |
 
 ## 构建安装包
 
@@ -110,16 +126,19 @@ npm test
 npm run dist
 ```
 
-构建结果输出到 `release/`。该目录包含安装包、blockmap 和未打包应用目录，已通过 `.gitignore` 排除，不会提交到仓库。
+构建结果输出到 `release/`。该目录包含安装包、DMG、blockmap 和未打包应用目录，已通过 `.gitignore` 排除，不会提交到仓库。
 
 当前安装包未配置 Authenticode 代码签名证书，因此 Windows 可能显示“未知发布者”。正式分发前建议配置代码签名。
 
+macOS 版本目前未进行 Apple Developer ID 签名和公证。首次打开时可能被 Gatekeeper 拦截，可在 Finder 中右键应用并选择“打开”，再确认运行。
+
 ## 本地数据与隐私
 
-Windows 默认用户数据目录：
+默认用户数据目录：
 
 ```text
-%APPDATA%\Grizzly SMS Desktop\
+Windows: %APPDATA%\Grizzly SMS Desktop\
+macOS:   ~/Library/Application Support/Grizzly SMS Desktop/
 ```
 
 主要文件：
@@ -130,7 +149,7 @@ Windows 默认用户数据目录：
 
 隐私与安全措施：
 
-- API Key 使用 Electron `safeStorage`，在 Windows 上由系统加密能力保护。
+- API Key 使用 Electron `safeStorage`，由 Windows 或 macOS 的系统加密能力保护。
 - API 地址固定为 `https://api.grizzlysms.com`。
 - 客户端不会在日志中记录包含 API Key 的请求 URL。
 - `.env*`、用户数据、备份、证书、构建产物和 QA 数据均被 Git 忽略。
@@ -191,8 +210,8 @@ npm run build
 
 - 增加历史记录状态、国家和服务筛选
 - 支持 CSV 导出
-- 增加应用图标和完整 Windows 品牌资源
-- 配置代码签名和自动更新通道
+- 完善 Windows 与 macOS 品牌资源
+- 配置 Windows 签名、Apple Developer ID 签名、公证和自动更新通道
 - 增加更多 IPC、取消状态和端到端回归测试
 
 ## 相关项目
