@@ -1,0 +1,26 @@
+node_modules/
+dist/
+release/
+coverage/
+.cache/
+.vite/
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# Local Grizzly SMS account data and backups
+grizzly-sms-desktop.json*
+*.corrupt-*
+qa-*/
+
+# Signing credentials and private keys
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
