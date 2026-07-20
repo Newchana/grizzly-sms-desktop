@@ -1,6 +1,6 @@
 {
   "name": "grizzly-sms-desktop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A secure Windows desktop client for Grizzly SMS",
   "main": "electron/main.cjs",
   "type": "module",

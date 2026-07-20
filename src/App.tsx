@@ -530,12 +530,11 @@ function Onboarding({ settings, onConnected, notify }: { settings: Settings; onC
         <span className="step">01 / 01</span>
         <h2>连接账户</h2>
         <p>在 Grizzly SMS 的 API 页面获取你的密钥。</p>
+        <button type="button" className="api-key-link" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/settings")}>打开 API Key 获取页面 ↗</button>
         <label>API Key<input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="输入 API Key" autoFocus required /></label>
         <label>API 地址<input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} readOnly required /><small className="field-meta">为保护密钥，仅允许 Grizzly SMS 官方 HTTPS API</small></label>
         <button className="primary-button" disabled={busy}>{busy ? "正在验证…" : "验证并连接"}<span>→</span></button>
-        <button type="button" className="text-button" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com")}>还没有 API Key？前往获取 ↗</button>
       </form>
-      {/** Toast is handled by parent after onboarding exits; local failures remain visible via browser console. */}
     </div>
   );
 }
@@ -553,7 +552,15 @@ function Dashboard({ balance, activations, activeCount, receivedCount, onRent, o
   return (
     <>
       <section className="stats-grid">
-        <div className="stat-card balance-card"><div className="stat-icon"><Icon name="wallet" /></div><span>可用余额</span><strong>{balance ? formatMoney(balance.balance, balance.currency) : "—"}</strong><small>Grizzly SMS 账户</small></div>
+        <div className="stat-card balance-card">
+          <div className="stat-icon"><Icon name="wallet" /></div>
+          <span>可用余额</span>
+          <strong>{balance ? formatMoney(balance.balance, balance.currency) : "—"}</strong>
+          <div className="balance-actions">
+            <button type="button" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/pay")}>充值 ↗</button>
+            <button type="button" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/history")}>余额流水 ↗</button>
+          </div>
+        </div>
         <div className="stat-card"><div className="stat-icon amber"><Icon name="phone" /></div><span>进行中</span><strong>{activeCount}</strong><small>正在等待短信</small></div>
         <div className="stat-card"><div className="stat-icon blue"><Icon name="inbox" /></div><span>已收到验证码</span><strong>{receivedCount}</strong><small>全部历史记录</small></div>
         <button className="rent-cta" onClick={onRent}><i><Icon name="plus" /></i><span>租用新号码</span><small>选择服务与国家</small></button>
@@ -574,6 +581,9 @@ function Dashboard({ balance, activations, activeCount, receivedCount, onRent, o
 }
 
 type SearchOption = { value: string; label: string };
+type QuoteState =
+  | { status: "idle" | "loading" | "error"; message: string }
+  | { status: "ready"; message: string; price: number; count?: number };
 
 function SearchPicker({
   value,
@@ -588,7 +598,7 @@ function SearchPicker({
   meta: string;
   onChange(value: string): void;
 }) {
-  const [query, setQuery] = useState(value);
+  const [query, setQuery] = useState(() => options.find((option) => option.value === value)?.label || "");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const deferredQuery = useDeferredValue(query);
@@ -610,9 +620,12 @@ function SearchPicker({
   }, [normalizedQuery, options]);
 
   useEffect(() => setActiveIndex(0), [normalizedQuery]);
+  useEffect(() => {
+    if (!open) setQuery(options.find((option) => option.value === value)?.label || "");
+  }, [open, options, value]);
 
   function select(option: SearchOption) {
-    setQuery(option.value);
+    setQuery(option.label);
     onChange(option.value);
     setOpen(false);
   }
@@ -626,14 +639,14 @@ function SearchPicker({
         onChange={(event) => {
           const next = event.target.value;
           setQuery(next);
-          onChange(next);
+          onChange("");
           setOpen(true);
         }}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown") {
             event.preventDefault();
             setOpen(true);
-            setActiveIndex((index) => Math.min(matches.length - 1, index + 1));
+            if (matches.length) setActiveIndex((index) => Math.min(matches.length - 1, index + 1));
           } else if (event.key === "ArrowUp") {
             event.preventDefault();
             setActiveIndex((index) => Math.max(0, index - 1));
@@ -659,9 +672,8 @@ function SearchPicker({
               onClick={() => select(option)}
             >
               <span>{option.label}</span>
-              <b>{option.value}</b>
             </button>
-          )) : <div className="search-picker-empty">没有匹配项，可直接输入服务代码</div>}
+          )) : <div className="search-picker-empty">没有匹配的名称</div>}
           {matches.length === 40 && <div className="search-picker-more">继续输入可缩小范围</div>}
         </div>
       )}
@@ -714,7 +726,8 @@ function ActivationRow({ item, onAction, notify }: { item: Activation; onAction(
 function RentNumber({ onCreated, notify }: { onCreated(activation: Activation): void; notify(type: "success" | "error", message: string): void }) {
   const [form, setForm] = useState({ service: "tg", country: "*", maxPrice: "", operator: "" });
   const [busy, setBusy] = useState(false);
-  const [priceText, setPriceText] = useState("选择条件后可查询价格");
+  const [quoteState, setQuoteState] = useState<QuoteState>({ status: "idle", message: "请选择服务和国家" });
+  const quoteRequestRef = useRef(0);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [services, setServices] = useState<ServiceOption[]>(() =>
     mergeServices(bundledServices as ServiceOption[], popularServices.map(([code, name]) => ({ code, name })))
@@ -750,23 +763,49 @@ function RentNumber({ onCreated, notify }: { onCreated(activation: Activation): 
     return () => { cancelled = true; };
   }, []);
 
-  async function checkPrice() {
-    setPriceText("正在查询价格…");
-    try {
-      const result = await window.grizzlyDesktop.api.getPrices({ service: form.service, country: form.country });
-      const quote = extractQuote(result);
-      if (quote.price !== undefined) {
-        setPriceText(`参考价格：${formatMoney(quote.price)}${quote.count !== undefined ? ` · 可用 ${quote.count} 个` : ""}`);
-      } else {
-        setPriceText("接口已返回数据，但当前条件没有可识别的报价");
-      }
-    } catch (error) {
-      setPriceText(errorMessage(error));
+  useEffect(() => {
+    const requestId = ++quoteRequestRef.current;
+    if (!form.service || !form.country) {
+      setQuoteState({ status: "idle", message: "请选择服务和国家" });
+      return;
     }
-  }
+
+    setQuoteState({ status: "loading", message: "正在自动获取价格…" });
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await window.grizzlyDesktop.api.getPrices({ service: form.service, country: form.country });
+        if (requestId !== quoteRequestRef.current) return;
+        const quote = extractQuote(result);
+        if (quote.price === undefined) {
+          setQuoteState({ status: "error", message: "当前条件没有可用报价，请更换服务或国家" });
+        } else if (quote.count === 0) {
+          setQuoteState({ status: "error", message: `参考价格：${formatMoney(quote.price)} · 当前暂无可用号码` });
+        } else {
+          setQuoteState({
+            status: "ready",
+            message: `参考价格：${formatMoney(quote.price)}${quote.count !== undefined ? ` · 可用 ${quote.count} 个` : ""}`,
+            price: quote.price,
+            count: quote.count
+          });
+        }
+      } catch (error) {
+        if (requestId === quoteRequestRef.current) {
+          setQuoteState({ status: "error", message: errorMessage(error) });
+        }
+      }
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [form.country, form.service]);
+
+  const canRent = quoteState.status === "ready";
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!canRent) {
+      notify("error", "请等待价格获取完成后再租用");
+      return;
+    }
     setBusy(true);
     try {
       const request: RentRequest = {
@@ -805,7 +844,7 @@ function RentNumber({ onCreated, notify }: { onCreated(activation: Activation): 
             服务
             <SearchPicker
               value={form.service}
-              placeholder="输入服务名称或代码搜索"
+              placeholder="输入服务名称搜索"
               options={serviceOptions}
               onChange={(service) => setForm((current) => ({ ...current, service }))}
               meta={catalogLoading ? "正在同步在线服务…" : `已加载 ${services.length} 个服务，搜索结果最多显示 40 条`}
@@ -815,7 +854,7 @@ function RentNumber({ onCreated, notify }: { onCreated(activation: Activation): 
             国家
             <SearchPicker
               value={form.country}
-              placeholder="输入国家代码"
+              placeholder="输入国家或地区名称搜索"
               options={countryOptions}
               onChange={(country) => setForm((current) => ({ ...current, country }))}
               meta={`${countries.length} 个国家 / 地区`}
@@ -824,8 +863,11 @@ function RentNumber({ onCreated, notify }: { onCreated(activation: Activation): 
           <label>价格上限（可选）<input type="number" min="0" step="0.01" value={form.maxPrice} onChange={(e) => setForm({ ...form, maxPrice: e.target.value })} placeholder="例如 2.00" /></label>
           <label>运营商（可选）<input value={form.operator} onChange={(e) => setForm({ ...form, operator: e.target.value })} placeholder="留空表示任意" /></label>
         </div>
-        <div className="price-hint"><span>{priceText}</span><button type="button" onClick={checkPrice}>查询价格</button></div>
-        <button className="primary-button wide" disabled={busy}>{busy ? "正在申请号码…" : "确认租用号码"}<span>→</span></button>
+        <div className={`price-hint ${quoteState.status}`}><span>{quoteState.message}</span></div>
+        <button className="primary-button wide" disabled={busy || !canRent}>
+          {busy ? "正在申请号码…" : quoteState.status === "loading" ? "正在获取价格…" : canRent ? "确认租用号码" : "请先选择并获取价格"}
+          <span>→</span>
+        </button>
       </form>
       <aside className="info-panel">
         <p className="eyebrow">HOW IT WORKS</p><h2>接下来会发生什么？</h2>
