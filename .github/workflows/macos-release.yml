@@ -1,0 +1,75 @@
+name: Build macOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to receive the DMG files
+        required: true
+        default: v0.3.2
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: macOS ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Intel
+            runner: macos-15-intel
+            arch: x64
+            file_arch: x86_64
+          - label: Apple-Silicon
+            runner: macos-15
+            arch: arm64
+            file_arch: arm64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build DMG
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run "dist:mac:${{ matrix.arch }}"
+
+      - name: Verify architecture and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          binary="$(find release -type f -path '*/Grizzly SMS Desktop.app/Contents/MacOS/Grizzly SMS Desktop' -print -quit)"
+          test -n "$binary"
+          file "$binary" | tee architecture.txt
+          grep -q "${{ matrix.file_arch }}" architecture.txt
+          dmg="$(find release -maxdepth 1 -type f -name '*-mac-${{ matrix.arch }}.dmg' -print -quit)"
+          test -n "$dmg"
+          shasum -a 256 "$dmg" > "$dmg.sha256"
+
+      - name: Upload to existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg="$(find release -maxdepth 1 -type f -name '*-mac-${{ matrix.arch }}.dmg' -print -quit)"
+          gh release upload "${{ inputs.tag }}" "$dmg" "$dmg.sha256" --clobber
