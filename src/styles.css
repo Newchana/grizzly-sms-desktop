@@ -68,15 +68,25 @@ h1, h2, h3, p { margin-top: 0; }
 .stat-card > span { display: block; color: var(--muted); font-size: 11px; }
 .stat-card strong { display: block; font-size: 26px; line-height: 1.3; margin-top: 2px; letter-spacing: -.04em; }
 .stat-card small, .rent-cta small { color: #606873; font-size: 10px; }
-.balance-actions { position: relative; z-index: 1; display: flex; gap: 7px; margin-top: 7px; }
-.balance-actions button { border: 0; padding: 0; background: transparent; color: #77818c; font-size: 9px; cursor: pointer; }
-.balance-actions button:hover { color: var(--green); }
 .rent-cta { border: 0; background: var(--green); color: #0b0d10; cursor: pointer; }
 .rent-cta:hover { background: #c4fa68; transform: translateY(-1px); }
 .rent-cta i { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 8px; background: #0b0d1017; margin-bottom: 22px; }
 .rent-cta i svg { width: 17px; }
 .rent-cta span { display: block; font-size: 15px; font-weight: 800; }
 .rent-cta small { color: #273316a8; }
+.account-actions { min-height: 96px; margin-bottom: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 22px; border: 1px solid var(--line); border-radius: 13px; background: linear-gradient(135deg, #15191e, #111419); }
+.account-actions h2 { margin: 2px 0 4px; font-size: 16px; }
+.account-actions > div > small { color: #656e78; font-size: 9px; }
+.account-action-buttons { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 10px; }
+.account-action-buttons button { min-width: 210px; min-height: 62px; padding: 10px 13px; display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 10px; border: 1px solid #303740; border-radius: 10px; background: #191d23; color: #dce1e6; text-align: left; cursor: pointer; }
+.account-action-buttons button:hover { border-color: #b8f05a66; background: #1d2328; transform: translateY(-1px); }
+.account-action-buttons button.recharge-action { border-color: #b8f05a44; background: #b8f05a0c; }
+.account-action-buttons button > i { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 9px; background: #b8f05a12; color: var(--green); }
+.account-action-buttons button > i svg { width: 17px; }
+.account-action-buttons button span, .account-action-buttons button strong, .account-action-buttons button small { display: block; }
+.account-action-buttons button strong { margin-bottom: 3px; font-size: 11px; }
+.account-action-buttons button small { color: #6e7781; font-size: 9px; }
+.account-action-buttons button b { color: var(--green); font-size: 14px; font-weight: 400; }
 
 .panel { border: 1px solid var(--line); background: var(--surface); border-radius: 13px; overflow: hidden; }
 .panel-heading { min-height: 81px; display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--line); }

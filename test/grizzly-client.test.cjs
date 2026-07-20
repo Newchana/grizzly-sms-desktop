@@ -29,6 +29,48 @@ test("活动记录使用官方 getActiveActivations action", async () => {
   }
 });
 
+test("任意国家价格查询不发送星号 country 参数", async () => {
+  const originalFetch = global.fetch;
+  let requestedUrl = "";
+  global.fetch = async (url) => {
+    requestedUrl = String(url);
+    return {
+      ok: true,
+      headers: { get: () => "application/json" },
+      text: async () => JSON.stringify({ "187": { tg: { cost: 1, count: 2 } } })
+    };
+  };
+  try {
+    await new GrizzlySMSClient("key").getPrices({ country: "*", service: "tg" });
+    const parsed = new URL(requestedUrl);
+    assert.equal(parsed.searchParams.get("action"), "getPrices");
+    assert.equal(parsed.searchParams.get("service"), "tg");
+    assert.equal(parsed.searchParams.has("country"), false);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test("任意国家租号使用官方 any country 参数", async () => {
+  const originalFetch = global.fetch;
+  let requestedUrl = "";
+  global.fetch = async (url) => {
+    requestedUrl = String(url);
+    return {
+      ok: true,
+      headers: { get: () => "text/plain" },
+      text: async () => "ACCESS_NUMBER:42:15551234567"
+    };
+  };
+  try {
+    await new GrizzlySMSClient("key").getNumber({ country: "*", service: "tg" });
+    const parsed = new URL(requestedUrl);
+    assert.equal(parsed.searchParams.get("country"), "any");
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test("getStatusV2 提取最近一条短信", async () => {
   const originalFetch = global.fetch;
   global.fetch = async () => ({

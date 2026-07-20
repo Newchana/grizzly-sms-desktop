@@ -140,9 +140,10 @@ class GrizzlySMSClient {
   async getPrices({ country, service } = {}) {
     // Grizzly advertises sms-activate compatibility. `getPrices` is the
     // broadly supported utility action; some accounts reject getPricesV2/V3.
+    // The wildcard is represented by omitting `country` for this action.
     return this.handler({
       action: "getPrices",
-      country: country === "any" ? "*" : country,
+      country: country === "*" || country === "any" ? undefined : country,
       service
     });
   }
@@ -151,7 +152,7 @@ class GrizzlySMSClient {
     const params = {
       action: "getNumberV2",
       service: request.service,
-      country: request.country === "any" ? "*" : request.country,
+      country: request.country === "*" || request.country === "any" ? "any" : request.country,
       operator: request.operator,
       maxPrice: request.maxPrice,
       providerIds: request.providerIds,

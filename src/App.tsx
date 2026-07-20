@@ -530,7 +530,7 @@ function Onboarding({ settings, onConnected, notify }: { settings: Settings; onC
         <span className="step">01 / 01</span>
         <h2>连接账户</h2>
         <p>在 Grizzly SMS 的 API 页面获取你的密钥。</p>
-        <button type="button" className="api-key-link" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/settings")}>打开 API Key 获取页面 ↗</button>
+        <button type="button" className="api-key-link" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/docs")}>打开 API 文档与 Key 获取页面 ↗</button>
         <label>API Key<input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="输入 API Key" autoFocus required /></label>
         <label>API 地址<input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} readOnly required /><small className="field-meta">为保护密钥，仅允许 Grizzly SMS 官方 HTTPS API</small></label>
         <button className="primary-button" disabled={busy}>{busy ? "正在验证…" : "验证并连接"}<span>→</span></button>
@@ -556,14 +556,31 @@ function Dashboard({ balance, activations, activeCount, receivedCount, onRent, o
           <div className="stat-icon"><Icon name="wallet" /></div>
           <span>可用余额</span>
           <strong>{balance ? formatMoney(balance.balance, balance.currency) : "—"}</strong>
-          <div className="balance-actions">
-            <button type="button" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/pay")}>充值 ↗</button>
-            <button type="button" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/history")}>余额流水 ↗</button>
-          </div>
+          <small>Grizzly SMS 账户</small>
         </div>
         <div className="stat-card"><div className="stat-icon amber"><Icon name="phone" /></div><span>进行中</span><strong>{activeCount}</strong><small>正在等待短信</small></div>
         <div className="stat-card"><div className="stat-icon blue"><Icon name="inbox" /></div><span>已收到验证码</span><strong>{receivedCount}</strong><small>全部历史记录</small></div>
         <button className="rent-cta" onClick={onRent}><i><Icon name="plus" /></i><span>租用新号码</span><small>选择服务与国家</small></button>
+      </section>
+
+      <section className="account-actions">
+        <div>
+          <p className="eyebrow">ACCOUNT</p>
+          <h2>账户与资金</h2>
+          <small>在 Grizzly SMS 官网安全完成资金操作</small>
+        </div>
+        <div className="account-action-buttons">
+          <button type="button" className="recharge-action" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/pay")}>
+            <i><Icon name="plus" /></i>
+            <span><strong>账户充值</strong><small>打开官网充值页面</small></span>
+            <b>↗</b>
+          </button>
+          <button type="button" onClick={() => window.grizzlyDesktop.openExternal("https://grizzlysms.com/profile/history")}>
+            <i><Icon name="history" /></i>
+            <span><strong>余额流水</strong><small>查询官网资金明细</small></span>
+            <b>↗</b>
+          </button>
+        </div>
       </section>
 
       <section className="panel">
