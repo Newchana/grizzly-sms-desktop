@@ -17,7 +17,6 @@ const popularServices = [
 ];
 
 const popularCountries = [
-  ["*", "任意国家"],
   ["187", "美国"],
   ["16", "英国"],
   ["73", "巴西"],
@@ -78,9 +77,9 @@ function normalizeCountries(raw: unknown): CountryOption[] {
     else Object.entries(record).forEach(([key, nested]) => visit(nested, key));
   };
   visit(raw);
-  const byId = new Map<string, CountryOption>([["*", { id: "*", name: "任意国家" }]]);
+  const byId = new Map<string, CountryOption>();
   found.forEach((item) => { if (!byId.has(item.id)) byId.set(item.id, item); });
-  return [...byId.values()].sort((a, b) => a.id === "*" ? -1 : b.id === "*" ? 1 : a.name.localeCompare(b.name, "en"));
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "en"));
 }
 
 function extractQuote(raw: unknown) {
@@ -93,7 +92,7 @@ function extractQuote(raw: unknown) {
     }
     const number = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
     if (!Number.isFinite(number) || number < 0) return;
-    if (/price|cost/i.test(key)) prices.push(number);
+    if (/price|cost/i.test(key) && number > 0) prices.push(number);
     if (/count|quantity|qty/i.test(key)) counts.push(number);
   };
   visit(raw);
@@ -741,7 +740,7 @@ function ActivationRow({ item, onAction, notify }: { item: Activation; onAction(
 }
 
 function RentNumber({ onCreated, notify }: { onCreated(activation: Activation): void; notify(type: "success" | "error", message: string): void }) {
-  const [form, setForm] = useState({ service: "tg", country: "*", maxPrice: "", operator: "" });
+  const [form, setForm] = useState({ service: "tg", country: "187", maxPrice: "", operator: "" });
   const [busy, setBusy] = useState(false);
   const [quoteState, setQuoteState] = useState<QuoteState>({ status: "idle", message: "请选择服务和国家" });
   const quoteRequestRef = useRef(0);

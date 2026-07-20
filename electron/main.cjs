@@ -18,6 +18,7 @@ function createWindow() {
     minHeight: 660,
     backgroundColor: "#0b0d10",
     title: "Grizzly SMS Desktop",
+    icon: path.join(__dirname, "..", "build", "icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),

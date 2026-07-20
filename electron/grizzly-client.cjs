@@ -140,19 +140,24 @@ class GrizzlySMSClient {
   async getPrices({ country, service } = {}) {
     // Grizzly advertises sms-activate compatibility. `getPrices` is the
     // broadly supported utility action; some accounts reject getPricesV2/V3.
-    // The wildcard is represented by omitting `country` for this action.
+    if (!country || country === "*" || country === "any") {
+      throw new GrizzlyApiError("COUNTRY_REQUIRED", "请选择具体国家后再查询价格");
+    }
     return this.handler({
       action: "getPrices",
-      country: country === "*" || country === "any" ? undefined : country,
+      country,
       service
     });
   }
 
   async getNumber(request) {
+    if (!request.country || request.country === "*" || request.country === "any") {
+      throw new GrizzlyApiError("COUNTRY_REQUIRED", "请选择具体国家后再租用号码");
+    }
     const params = {
       action: "getNumberV2",
       service: request.service,
-      country: request.country === "*" || request.country === "any" ? "any" : request.country,
+      country: request.country,
       operator: request.operator,
       maxPrice: request.maxPrice,
       providerIds: request.providerIds,

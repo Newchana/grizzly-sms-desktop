@@ -1,6 +1,6 @@
 {
   "name": "grizzly-sms-desktop",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A secure Windows desktop client for Grizzly SMS",
   "main": "electron/main.cjs",
   "type": "module",
@@ -42,10 +42,12 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "build/icon.png",
       "package.json",
       "THIRD_PARTY_NOTICES.md"
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis"
       ],
